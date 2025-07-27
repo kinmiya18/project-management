@@ -28,7 +28,7 @@ project-management-system/
 ├── public/
 │   └── js/
 │       └── app.js              # Frontend JavaScript
-├── app.js                      # File chính của ứng dụng
+├── index.js                    # File chính của ứng dụng
 ├── package.json                # Dependencies và scripts
 ├── .env                        # Biến môi trường
 └── README.md                   # Tài liệu dự án
