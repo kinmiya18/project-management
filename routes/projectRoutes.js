@@ -8,17 +8,17 @@ const projectValidation = [
     body('key')
         .trim()
         .notEmpty()
-        .withMessage('Project key is required')
+        .withMessage('Project key là bắt buộc')
         .isLength({ min: 3, max: 20 })
-        .withMessage('Project key must be between 3 and 20 characters')
+        .withMessage('Project key phải có độ dài lớn hơn 3 ký tự')
         .matches(/^[a-z0-9-]+$/)
-        .withMessage('Project key can only contain lowercase letters, numbers, and hyphens(-)'),
+        .withMessage('Project key chỉ có thể chứa chữ thường, số và dấu gạch ngang'),
     body('name')
         .trim()
         .notEmpty()
-        .withMessage('Project name is required')
+        .withMessage('Project name là bắt buộc')
         .isLength({ min: 2, max: 100 })
-        .withMessage('Project name must be between 2 and 100 characters')
+        .withMessage('Project name phải có độ dài hơn 2 ký tự ')
 ];
 
 const projectUpdateValidation = [
@@ -26,14 +26,14 @@ const projectUpdateValidation = [
         .optional()
         .trim()
         .isLength({ min: 3, max: 20 })
-        .withMessage('Project key must be between 3 and 20 characters')
+        .withMessage('Project key phải có độ dài hơn 3 ký tự')
         .matches(/^[A-Z0-9_]+$/)
-        .withMessage('Project key can only contain uppercase letters, numbers, and underscores'),
+        .withMessage('Project key chỉ có thể chứa chữ hoa, số và dấu gạch dưới'),
     body('name')
         .optional()
         .trim()
         .isLength({ min: 2, max: 100 })
-        .withMessage('Project name must be between 2 and 100 characters')
+        .withMessage('Project name phải có độ dài hơn 2 ký tự')
 ];
 
 // Routes
