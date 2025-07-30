@@ -17,12 +17,21 @@ Hệ thống quản lý project và file cấu hình được xây dựng với 
 project-management-system/
 ├── controllers/
 │   ├── projectController.js    # Controller xử lý logic projects
-│   └── configController.js     # Controller xử lý logic configs
+│   ├── configController.js     # Controller xử lý logic configs
+│   └── envController.js        # Controller xử lý logic env
 ├── models/
-│   └── Project.js              # Model MongoDB cho projects
+│   ├── Project.js              # Model MongoDB cho projects, configs và envs
 ├── routes/
 │   ├── projectRoutes.js        # Routes cho projects API
-│   └── configRoutes.js         # Routes cho configs API
+│   ├── configRoutes.js         # Routes cho configs API
+│   └── envRoutes.js            # Routes cho env API
+├── middlewares/
+│   ├── validateRequest.js      # Middleware validate dữ liệu
+│   └── checkProjectExists.js   # Middleware kiểm tra project tồn tại
+├── validates/
+│   ├── config.validate.js      # Validate rules cho config
+│   ├── project.validate.js     # Validate rules cho project
+│   └── env.validate.js         # Validate rules cho env
 ├── views/
 │   └── index.ejs               # Template HTML chính
 ├── public/
@@ -32,6 +41,10 @@ project-management-system/
 ├── package.json                # Dependencies và scripts
 ├── .env                        # Biến môi trường
 └── README.md                   # Tài liệu dự án
+├──Dockerfile
+├──docker-compose.yml
+
+
 ```
 
 ## Cài đặt
@@ -96,6 +109,15 @@ npm start
 | PUT | `/api/configs/:projectId/:configId` | Cập nhật config |
 | DELETE | `/api/configs/:projectId/:configId` | Xóa config |
 
+### Envs API
+
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| POST | `/api/envs/:projectId` | Thêm config vào env |
+| GET | `/api/envs/:projectId/:envId` | Lấy thông tin env |
+| PUT | `/api/envs/:projectId/:envId` | Cập nhật env |
+| DELETE | `/api/envs/:projectId/:envId` | Xóa env |
+
 ## Cấu trúc dữ liệu
 
 ### Project Schema
@@ -110,6 +132,8 @@ npm start
       file_name: String,     // Tên file
       mount_point: String,   // Đường dẫn mount
       file_content: String,  // Nội dung file
+      port_host: number,
+      port_container: number
       createdAt: Date,
       updatedAt: Date
     }
