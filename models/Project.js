@@ -1,5 +1,20 @@
 const mongoose = require('mongoose');
 
+const envSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    value: {
+        type: String,
+        required: true,
+        trim: true
+    }
+}, {
+    _id: true // Mỗi env sẽ có id riêng
+});
+
 const configSchema = new mongoose.Schema({
     file_name: {
         type: String,
@@ -32,7 +47,16 @@ const projectSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
-    configs: [configSchema]
+    port_host: {
+        type: Number,
+        required: true
+    },
+    port_container: {
+        type: Number,
+        required: true
+    },
+    configs: [configSchema],
+    envs: [envSchema]
 }, {
     timestamps: true
 });
@@ -44,13 +68,5 @@ projectSchema.pre('save', function(next) {
     }
     next();
 });
-
-// Virtual for config count
-projectSchema.virtual('configCount').get(function() {
-    return this.configs.length;
-});
-
-// Ensure virtual fields are serialized
-projectSchema.set('toJSON', { virtuals: true });
 
 module.exports = mongoose.model('Project', projectSchema);

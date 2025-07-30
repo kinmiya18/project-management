@@ -3,6 +3,7 @@ let projects = [];
 let currentProject = null;
 let editingConfigId = null;
 let editingProjectId = null;
+let editingEnvId = null;
 
 // DOM elements
 const dashboardView = document.getElementById('dashboardView');
@@ -10,9 +11,11 @@ const projectDetailView = document.getElementById('projectDetailView');
 const configModal = document.getElementById('configModal');
 const projectModal = document.getElementById('projectModal');
 const fileContentModal = document.getElementById('fileContentModal');
+const envModal = document.getElementById('envModal');
 const projectsGrid = document.getElementById('projectsGrid');
 const projectInfo = document.getElementById('projectInfo');
 const configTable = document.getElementById('configTable');
+const envTable = document.getElementById('envTable');
 const loadingIndicator = document.getElementById('loadingIndicator');
 
 // API functions
@@ -23,8 +26,8 @@ const API = {
         return await response.json();
     },
 
-    getProject: async (id) => {
-        const response = await fetch(`/api/projects/${id}`);
+    getProject: async (projectId) => {
+        const response = await fetch(`/api/projects/${projectId}`);
         return await response.json();
     },
 
@@ -37,8 +40,8 @@ const API = {
         return await response.json();
     },
 
-    updateProject: async (id, data) => {
-        const response = await fetch(`/api/projects/${id}`, {
+    updateProject: async (projectId, data) => {
+        const response = await fetch(`/api/projects/${projectId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -46,8 +49,8 @@ const API = {
         return await response.json();
     },
 
-    deleteProject: async (id) => {
-        const response = await fetch(`/api/projects/${id}`, {
+    deleteProject: async (projectId) => {
+        const response = await fetch(`/api/projects/${projectId}`, {
             method: 'DELETE'
         });
         return await response.json();
@@ -74,6 +77,32 @@ const API = {
 
     deleteConfig: async (projectId, configId) => {
         const response = await fetch(`/api/configs/${projectId}/${configId}`, {
+            method: 'DELETE'
+        });
+        return await response.json();
+    },
+
+    // Environment variables endpoints
+    addEnv: async (projectId, data) => {
+        const response = await fetch(`/api/envs/${projectId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        return await response.json();
+    },
+
+    updateEnv: async (projectId, envId, data) => {
+        const response = await fetch(`/api/envs/${projectId}/${envId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        return await response.json();
+    },
+
+    deleteEnv: async (projectId, envId) => {
+        const response = await fetch(`/api/envs/${projectId}/${envId}`, {
             method: 'DELETE'
         });
         return await response.json();
@@ -164,7 +193,7 @@ function renderProjects() {
                     <p class="text-sm text-gray-500">Key: ${escapeHtml(project.key)}</p>
                 </div>
                 <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                    ${project.configs.length} configs
+                    ${project.port_host || 'N/A'}:${project.port_container || 'N/A'}
                 </span>
             </div>
             <div class="flex justify-end space-x-2">
@@ -201,12 +230,17 @@ async function viewProject(projectId) {
                     <div class="text-lg font-semibold text-gray-900">${escapeHtml(currentProject.name)}</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-sm text-gray-500 mb-1">Configs</div>
-                    <div class="text-lg font-semibold text-gray-900">${currentProject.configs.length}</div>
+                    <div class="text-sm text-gray-500 mb-1">Port Host</div>
+                    <div class="text-lg font-semibold text-gray-900">${escapeHtml(currentProject.port_host || 'N/A')}</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-sm text-gray-500 mb-1">Port Container</div>
+                    <div class="text-lg font-semibold text-gray-900">${escapeHtml(currentProject.port_container || 'N/A')}</div>
                 </div>
             `;
 
             renderConfigTable();
+            renderEnvTable();
             showView('detail');
         } else {
             showNotification('Lỗi', 'Không thể tải thông tin project', 'error');
@@ -256,6 +290,43 @@ function renderConfigTable() {
     `).join('');
 }
 
+// Render environment variables table
+function renderEnvTable() {
+    if (!currentProject.envs || !currentProject.envs.length) {
+        envTable.innerHTML = `
+            <tr>
+                <td colspan="3" class="px-6 py-8 text-center text-gray-500">
+                    <i class="fas fa-code text-4xl mb-2 text-gray-300"></i>
+                    <div>Chưa có biến môi trường nào</div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    envTable.innerHTML = currentProject.envs.map((env) => `
+        <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                    <i class="fas fa-code text-green-500 mr-3"></i>
+                    <span class="text-sm font-medium text-gray-900">${escapeHtml(env.name)}</span>
+                </div>
+            </td>
+            <td class="px-6 py-4">
+                <span class="text-sm text-gray-600 font-mono break-words">${escapeHtml(env.value)}</span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <button onclick="editEnv('${env._id}')" class="text-blue-600 hover:text-blue-900 mr-3">
+                    <i class="fas fa-edit mr-1"></i>Edit
+                </button>
+                <button onclick="deleteEnv('${env._id}')" class="text-red-600 hover:text-red-900">
+                    <i class="fas fa-trash mr-1"></i>Xóa
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
 // Show/hide views
 function showView(view) {
     if (view === 'dashboard') {
@@ -290,7 +361,21 @@ function hideProjectModal() {
     projectModal.classList.add('hidden');
     document.body.style.overflow = 'auto';
     document.getElementById('projectForm').reset();
+    document.getElementById('projectModalTitle').textContent = 'Thêm Project Mới';
     editingProjectId = null;
+}
+
+function showEnvModal(title = 'Thêm Biến Môi Trường Mới') {
+    document.getElementById('envModalTitle').textContent = title;
+    envModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function hideEnvModal() {
+    envModal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+    document.getElementById('envForm').reset();
+    editingEnvId = null;
 }
 
 function showFileContentModal() {
@@ -329,7 +414,7 @@ async function deleteConfig(configId) {
             const response = await API.deleteConfig(currentProject._id, configId);
             if (response.success) {
                 showNotification('Thành công', 'Đã xóa config thành công');
-                await viewProject(currentProject._id); // Refresh project data
+                await viewProject(currentProject._id);
             } else {
                 showNotification('Lỗi', response.message || 'Không thể xóa config', 'error');
             }
@@ -369,12 +454,92 @@ async function saveConfig(event) {
             const action = editingConfigId ? 'cập nhật' : 'thêm';
             showNotification('Thành công', `Đã ${action} config thành công`);
             hideModal();
-            await viewProject(currentProject._id); // Refresh project data
+            await viewProject(currentProject._id);
         } else {
             showNotification('Lỗi', response.message || 'Không thể lưu config', 'error');
         }
     } catch (error) {
         console.error('Error saving config:', error);
+        showNotification('Lỗi', 'Không thể kết nối đến server', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Environment variables operations
+function addEnv() {
+    editingEnvId = null;
+    showEnvModal('Thêm Biến Môi Trường Mới');
+}
+
+function editEnv(envId) {
+    editingEnvId = envId;
+    const env = currentProject.envs.find(e => e._id === envId);
+    
+    if (env) {
+        document.getElementById('envName').value = env.name;
+        document.getElementById('envValue').value = env.value;
+        
+        showEnvModal('Chỉnh sửa Biến Môi Trường');
+    }
+}
+
+async function deleteEnv(envId) {
+    if (confirm('Bạn có chắc chắn muốn xóa biến môi trường này?')) {
+        try {
+            showLoading();
+            const response = await API.deleteEnv(currentProject._id, envId);
+            if (response.success) {
+                showNotification('Thành công', 'Đã xóa biến môi trường thành công');
+                await viewProject(currentProject._id);
+            } else {
+                showNotification('Lỗi', response.message || 'Không thể xóa biến môi trường', 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting env:', error);
+            showNotification('Lỗi', 'Không thể kết nối đến server', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+}
+
+async function saveEnv(event) {
+    event.preventDefault();
+    
+    const envName = document.getElementById('envName').value.trim();
+    const envValue = document.getElementById('envValue').value.trim();
+
+    const envData = {
+        name: envName,
+        value: envValue
+    };
+
+    try {
+        showLoading();
+        let response;
+        
+        if (editingEnvId) {
+            response = await API.updateEnv(currentProject._id, editingEnvId, envData);
+        } else {
+            response = await API.addEnv(currentProject._id, envData);
+        }
+
+        if (response.success) {
+            const action = editingEnvId ? 'cập nhật' : 'thêm';
+            showNotification('Thành công', `Đã ${action} biến môi trường thành công`);
+            hideEnvModal();
+            await viewProject(currentProject._id);
+        } else {
+            if (response.errors && response.errors.length > 0) {
+                const errorMessages = response.errors.map(e => `${e.msg}`).join('\n');
+                showNotification('Lỗi', errorMessages, 'error');
+            } else {
+                showNotification('Lỗi', response.message || 'Không thể lưu biến môi trường', 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Error saving env:', error);
         showNotification('Lỗi', 'Không thể kết nối đến server', 'error');
     } finally {
         hideLoading();
@@ -389,8 +554,10 @@ function editProject(projectId) {
 
     document.getElementById('projectName').value = project.name;
     document.getElementById('projectKey').value = project.key;
+    document.getElementById('portHost').value = project.port_host || '';
+    document.getElementById('portContainer').value = project.port_container || '';
     document.getElementById('projectModalTitle').textContent = 'Chỉnh sửa Project';
-    
+
     showProjectModal();
 }
 
@@ -404,9 +571,8 @@ async function deleteProject(projectId) {
             const response = await API.deleteProject(projectId);
             if (response.success) {
                 showNotification('Thành công', 'Đã xóa project thành công');
-                await loadProjects(); // Refresh projects list
+                await loadProjects();
                 
-                // If we're currently viewing this project, go back to dashboard
                 if (currentProject && currentProject._id === projectId) {
                     showView('dashboard');
                 }
@@ -437,10 +603,14 @@ async function saveProject(event) {
     
     const projectName = document.getElementById('projectName').value.trim();
     const projectKey = document.getElementById('projectKey').value.trim();
+    const projectPortHost = document.getElementById('portHost').value.trim();
+    const projectPortContainer = document.getElementById('portContainer').value.trim();
 
     const projectData = {
         name: projectName,
-        key: projectKey
+        key: projectKey,
+        port_host: projectPortHost,
+        port_container: projectPortContainer
     };
 
     try {
@@ -457,14 +627,12 @@ async function saveProject(event) {
             const action = editingProjectId ? 'cập nhật' : 'tạo';
             showNotification('Thành công', `Đã ${action} project thành công`);
             hideProjectModal();
-            await loadProjects(); // Refresh projects list
+            await loadProjects();
             
-            // If we're editing and currently viewing this project, refresh view
             if (editingProjectId && currentProject && currentProject._id === editingProjectId) {
                 await viewProject(editingProjectId);
             }
         } else {
-            // Nếu có lỗi validation cụ thể, hiện lỗi đầu tiên
             if (response.errors && response.errors.length > 0) {
                 const errorMessages = response.errors.map(e => `${e.msg}`).join('\n');
                 showNotification('Lỗi', errorMessages, 'error');
@@ -482,6 +650,9 @@ async function saveProject(event) {
 
 // Utility function to escape HTML
 function escapeHtml(text) {
+    if (typeof text !== 'string') {
+        text = String(text ?? '');
+    }
     const map = {
         '&': '&amp;',
         '<': '&lt;',
@@ -503,6 +674,12 @@ function setupEventListeners() {
     document.getElementById('closeModal').addEventListener('click', hideModal);
     document.getElementById('cancelBtn').addEventListener('click', hideModal);
     document.getElementById('configForm').addEventListener('submit', saveConfig);
+
+    // Environment variables operations
+    document.getElementById('addEnvBtn').addEventListener('click', addEnv);
+    document.getElementById('closeEnvModal').addEventListener('click', hideEnvModal);
+    document.getElementById('cancelEnvBtn').addEventListener('click', hideEnvModal);
+    document.getElementById('envForm').addEventListener('submit', saveEnv);
 
     // Project operations
     document.getElementById('addProjectBtn').addEventListener('click', () => {
@@ -530,6 +707,10 @@ function setupEventListeners() {
         if (e.target === fileContentModal) hideFileContentModal();
     });
 
+    envModal.addEventListener('click', (e) => {
+        if (e.target === envModal) hideEnvModal();
+    });
+
     // Close modals on Escape key
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -539,6 +720,8 @@ function setupEventListeners() {
                 hideProjectModal();
             } else if (!fileContentModal.classList.contains('hidden')) {
                 hideFileContentModal();
+            } else if (!envModal.classList.contains('hidden')) {
+                hideEnvModal();
             }
         }
     });

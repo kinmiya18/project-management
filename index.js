@@ -6,11 +6,12 @@ const path = require('path');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 // Import routes
 const projectRoutes = require('./routes/projectRoutes');
 const configRoutes = require('./routes/configRoutes');
+const envRoutes = require('./routes/envRoutes');
 
 // Database connection
 mongoose.connect(process.env.MONGODB_URI , {
@@ -33,6 +34,7 @@ app.set('views', path.join(__dirname, 'views'));
 // Routes
 app.use('/api/projects', projectRoutes);
 app.use('/api/configs', configRoutes);
+app.use('/api/envs', envRoutes);
 
 // Main route
 app.get('/', (req, res) => {

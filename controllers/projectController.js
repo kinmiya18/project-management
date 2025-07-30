@@ -1,5 +1,4 @@
 const Project = require('../models/Project');
-const { validationResult } = require('express-validator');
 
 const projectController = {
     // Get all projects
@@ -22,7 +21,7 @@ const projectController = {
     // Get project by ID
     getProjectById: async (req, res) => {
         try {
-            const project = await Project.findById(req.params.id);
+            const project = await Project.findById(req.params.projectId);
             if (!project) {
                 return res.status(404).json({
                     success: false,
@@ -45,16 +44,8 @@ const projectController = {
     // Create new project
     createProject: async (req, res) => {
         try {
-            const errors = validationResult(req);
-            if (!errors.isEmpty()) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Validation errors',
-                    errors: errors.array()
-                });
-            }
-
-            const { key, name } = req.body;
+            
+            const { key, name, port_host, port_container } = req.body;
 
             // Check if project key already exists
             const existingProject = await Project.findOne({ key: key });
@@ -67,7 +58,9 @@ const projectController = {
 
             const project = new Project({
                 key: key,
-                name: name.trim()
+                name: name.trim(),
+                port_host: parseInt(port_host, 10),
+                port_container: parseInt(port_container, 10)
             });
 
             await project.save();
@@ -89,32 +82,15 @@ const projectController = {
     // Update project
     updateProject: async (req, res) => {
         try {
-            const errors = validationResult(req);
-            if (!errors.isEmpty()) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Validation errors',
-                    errors: errors.array()
-                });
-            }
-
-            const { key, name } = req.body;
-            const projectId = req.params.id;
-
+            const { key, name, port_host, port_container } = req.body;
             // Check if project exists
-            const project = await Project.findById(projectId);
-            if (!project) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Project not found'
-                });
-            }
+            const project = req.project;
 
             // Check if new key conflicts with existing projects (excluding current)
             if (key && key.toUpperCase() !== project.key) {
                 const existingProject = await Project.findOne({ 
                     key: key.toUpperCase(),
-                    _id: { $ne: projectId }
+                    _id: { $ne: project._id }
                 });
                 if (existingProject) {
                     return res.status(400).json({
@@ -127,6 +103,8 @@ const projectController = {
             // Update project
             if (key) project.key = key.toUpperCase();
             if (name) project.name = name.trim();
+            if (port_host !== undefined) project.port_host = port_host;
+            if (port_container !== undefined) project.port_container = port_container;  
 
             await project.save();
 
@@ -147,15 +125,8 @@ const projectController = {
     // Delete project
     deleteProject: async (req, res) => {
         try {
-            const project = await Project.findById(req.params.id);
-            if (!project) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Project not found'
-                });
-            }
-
-            await Project.findByIdAndDelete(req.params.id);
+            const project = req.project;
+            await Project.findByIdAndDelete(project._id);
 
             res.json({
                 success: true,

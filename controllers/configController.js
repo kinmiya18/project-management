@@ -1,29 +1,11 @@
 const Project = require('../models/Project');
-const { validationResult } = require('express-validator');
 
 const configController = {
     // Add config to project
     addConfig: async (req, res) => {
         try {
-            const errors = validationResult(req);
-            if (!errors.isEmpty()) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Validation errors',
-                    errors: errors.array()
-                });
-            }
-
             const { file_name, mount_point, file_content } = req.body;
-            const projectId = req.params.projectId;
-
-            const project = await Project.findById(projectId);
-            if (!project) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Project not found'
-                });
-            }
+            const project = req.project;
 
             // Check if config with same file_name already exists
             const existingConfig = project.configs.find(
@@ -62,25 +44,9 @@ const configController = {
     // Update config
     updateConfig: async (req, res) => {
         try {
-            const errors = validationResult(req);
-            if (!errors.isEmpty()) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Validation errors',
-                    errors: errors.array()
-                });
-            }
-
             const { file_name, mount_point, file_content } = req.body;
             const { projectId, configId } = req.params;
-
-            const project = await Project.findById(projectId);
-            if (!project) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Project not found'
-                });
-            }
+            const project = req.project;
 
             const config = project.configs.id(configId);
             if (!config) {
@@ -129,13 +95,7 @@ const configController = {
         try {
             const { projectId, configId } = req.params;
 
-            const project = await Project.findById(projectId);
-            if (!project) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Project not found'
-                });
-            }
+            const project = req.project;
 
             const config = project.configs.id(configId);
             if (!config) {
@@ -166,14 +126,7 @@ const configController = {
         try {
             const { projectId, configId } = req.params;
 
-            const project = await Project.findById(projectId);
-            if (!project) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Project not found'
-                });
-            }
-
+            const project = req.project;
             const config = project.configs.id(configId);
             if (!config) {
                 return res.status(404).json({
